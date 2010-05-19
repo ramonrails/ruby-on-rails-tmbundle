@@ -76,7 +76,7 @@ def display_menu(klass)
     load_and_cache_all_models
     show_options
   else
-    STDOUT << options[selected]
+    STDOUT << ".#{options[selected]}"
   end
 end
 
