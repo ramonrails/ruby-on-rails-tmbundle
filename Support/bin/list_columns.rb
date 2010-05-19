@@ -68,7 +68,8 @@ def display_menu(klass)
   columns      = cache[klass][:columns]
   associations = cache[klass][:associations]
 
-  options = associations + [LINE] + columns + [LINE, RELOAD_MESSAGE]
+  # columns first. associations later. chronological list of items simplifies visual location of item
+  options = columns.sort + [LINE] + associations.sort + [LINE, RELOAD_MESSAGE]
   selected = TextMate::UI.menu(options)
   return if selected.nil?
   
