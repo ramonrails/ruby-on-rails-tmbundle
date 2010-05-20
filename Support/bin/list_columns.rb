@@ -7,37 +7,39 @@ require "current_word"
 
 CACHE_DIR  = File.expand_path("tmp/textmate/", TextMate.project_directory)
 CACHE_FILE = File.join(CACHE_DIR, "cache.yml")
+SCHEMA_FILE = File.join(Rails.root, "db", "schema.rb")
 
 RELOAD_MESSAGE = "Reload database schema..."
 LINE = "---"
 
 def load_and_cache_all_models
   begin
-    cache = {}
+    if !(File.exists?(CACHE_FILE) && (File.new(CACHE_FILE).ctime > File.new(SCHEMA_FILE).ctime))
+      cache = {}
 
-    File.delete(CACHE_FILE) if File.exists?(CACHE_FILE)
+      File.delete(CACHE_FILE) if File.exists?(CACHE_FILE)
 
-    TextMate.call_with_progress(:title => "Contacting database", :message => "Fetching database schema...") do
-      begin
-        require "#{TextMate.project_directory}/config/environment"
+      TextMate.call_with_progress(:title => "Contacting database", :message => "Fetching database schema...") do
+        begin
+          require "#{TextMate.project_directory}/config/environment"
 
-        Dir.glob(File.join(Rails.root, "app/models/*.rb")) do |file|
-          klass = File.basename(file, '.*').camelize.constantize rescue nil
+          Dir.glob(File.join(Rails.root, "app/models/*.rb")) do |file|
+            klass = File.basename(file, '.*').camelize.constantize rescue nil
       
-          if klass and klass.class == Class and klass.ancestors.include?(ActiveRecord::Base)
-            cache[klass.name.underscore] = { 
-              :associations => klass.reflections.stringify_keys.keys,
-              :columns      => klass.column_names
-            } rescue nil
+            if klass and klass.class == Class and klass.ancestors.include?(ActiveRecord::Base)
+              cache[klass.name.underscore] = { 
+                :associations => klass.reflections.stringify_keys.keys,
+                :columns      => klass.column_names
+              } rescue nil
+            end
           end
-        end
       
-        File.open(CACHE_FILE, 'w') { |out| YAML.dump(cache, out ) }
-      rescue Exception => e
-        @error = "Fix it: #{e.message}"
+          File.open(CACHE_FILE, 'w') { |out| YAML.dump(cache, out ) }
+        rescue Exception => e
+          @error = "Fix it: #{e.message}"
+        end
       end
     end
-    
   rescue Exception => e
     @error = "Fix it: #{e.message}"
   ensure
@@ -68,7 +70,7 @@ def display_menu(klass)
   columns      = cache[klass][:columns]
   associations = cache[klass][:associations]
 
-  # columns first. associations later. chronological list of items simplifies visual location of item
+  # ramonrails: columns first. associations later. chronological list of items simplifies visual location of item
   options = columns.sort + [LINE] + associations.sort + [LINE, RELOAD_MESSAGE]
   selected = TextMate::UI.menu(options)
   return if selected.nil?
@@ -95,7 +97,7 @@ def show_options
       options = [
         @error || "'#{Inflector.camelize(klass)}' is not an Active Record derived class or was not recognised as a class.", 
         LINE,
-        cache.keys.map { |model_name| "Use #{Inflector.camelize(model_name)}..." },
+        cache.keys.sort.map { |model_name| "Use #{Inflector.camelize(model_name)}..." },
         LINE,
         RELOAD_MESSAGE
       ].flatten
