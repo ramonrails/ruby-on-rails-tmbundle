@@ -7,7 +7,7 @@ require "current_word"
 
 CACHE_DIR  = File.expand_path("tmp/textmate/", TextMate.project_directory)
 CACHE_FILE = File.join(CACHE_DIR, "cache.yml")
-SCHEMA_FILE = File.join(Rails.root, "db", "schema.rb")
+SCHEMA_FILE = File.join(TextMate.project_directory, "db", "schema.rb")
 
 RELOAD_MESSAGE = "Reload database schema..."
 LINE = "---"
