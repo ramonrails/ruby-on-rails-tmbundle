@@ -63,7 +63,7 @@ end
 # Returns the last word before the cursor
 # 
 def word
-  @word ||= Word.current_word('a-zA-Z0-9.', :left).split('.').last
+  @word ||= Word.current_word('a-zA-Z0-9_.', :left).split('.').last
 end
 
 def display_menu(klass)
